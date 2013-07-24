@@ -3,6 +3,10 @@ require 'nokogiri'
 require 'restclient'
 
 module OpenGraph
+
+  MANDATORY_ATTRIBUTES = %w(title type image url)
+  OPTIONAL_ATTRIBUTES = %w(description)
+
   # Fetch Open Graph data from the specified URI. Makes an
   # HTTP GET request and returns an OpenGraph::Object if there
   # is data to be found or <tt>false</tt> if there isn't.
@@ -23,6 +27,21 @@ module OpenGraph
         page[$1.gsub('-','_')] = m.attribute('content').to_s
       end
     end
+
+    if !strict && !page.valid?
+      doc.css('meta').each do |m|
+        if m.attribute('name') && (MANDATORY_ATTRIBUTES + OPTIONAL_ATTRIBUTES).include?(m.attribute('name').to_s)
+          page[m.attribute('name')] = m.attribute('content').to_s
+        end
+      end
+      doc.css('link').each do |l|
+        if l.attribute('rel') && l.attribute('rel').to_s == "canonical"
+          page['url'] = l.attribute('href').to_s
+        end
+      end
+
+    end
+
     return false if page.keys.empty?
     return false unless page.valid? if strict
     page
@@ -42,7 +61,7 @@ module OpenGraph
   # The OpenGraph::Object is a Hash with method accessors for
   # all detected Open Graph attributes.
   class Object < Hashie::Mash
-    MANDATORY_ATTRIBUTES = %w(title type image url)
+   # MANDATORY_ATTRIBUTES = %w(title type image url)
     
     # The object type.
     def type

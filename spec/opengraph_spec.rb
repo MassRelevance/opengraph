@@ -3,23 +3,37 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 describe OpenGraph do
   let(:rotten){ File.open(File.dirname(__FILE__) + '/examples/rottentomatoes.html').read }
   let(:partial){ File.open(File.dirname(__FILE__) + '/examples/partial.html').read }
+  let(:amazon){ File.open(File.dirname(__FILE__) + '/examples/amazon.html').read }
   
   describe '.parse' do
-    it 'should return false if there isnt valid Open Graph info' do
+    it 'should return false if there isnt valid Open Graph info or meta tags' do
       OpenGraph.parse("").should be_false
       OpenGraph.parse(partial).should be_false
+      OpenGraph.parse(amazon).should be_false
     end
     
     it 'should otherwise return an OpenGraph::Object' do
       OpenGraph.parse(rotten).should be_kind_of(OpenGraph::Object)
     end
     
-    context ' without strict mode' do
+    context ' without strict mode, partial' do
+      
       subject{ OpenGraph.parse(partial, false) }
       
       it { should_not be_false }
       it { subject.title.should == 'Partialized' }
+
     end
+
+    context ' without strict mode, amazon' do
+
+      subject{ OpenGraph.parse(amazon, false) }
+
+      it { should_not be_false }
+      it { subject.url.should == 'http://www.amazon.com/Kindle-Fire-HD/dp/B0083PWAPW'}
+
+    end
+
   end
   
   describe '.fetch' do
