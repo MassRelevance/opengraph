@@ -1,6 +1,7 @@
 require 'hashie'
 require 'nokogiri'
 require 'restclient'
+require File.dirname(__FILE__) + '/exceptions'
 
 module OpenGraph
 
@@ -13,12 +14,12 @@ module OpenGraph
   #
   # Pass <tt>false</tt> for the second argument if you want to
   # see invalid (i.e. missing a required attribute) data.
-  def self.fetch(uri, timeout = -1, strict = true)
+  def self.fetch(uri, timeout = nil, strict = true)
     response = RestClient::Request.execute(:method => :get, :url => uri, :timeout => timeout, :open_timeout => timeout)
     parse(response.body, strict)
   rescue RestClient::RequestTimeout
-    if timeout != -1 && timeout != nil
-      raise
+    if timeout
+      raise OpenGraph::TimeoutError
     end
 
     false
