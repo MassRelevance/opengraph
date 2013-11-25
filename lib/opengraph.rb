@@ -14,17 +14,26 @@ module OpenGraph
   #
   # Pass <tt>false</tt> for the second argument if you want to
   # see invalid (i.e. missing a required attribute) data.
-  def self.fetch(uri, timeout = nil, strict = true)
-    response = RestClient::Request.execute(:method => :get, :url => uri, :timeout => timeout, :open_timeout => timeout)
-    parse(response.body, strict)
-  rescue RestClient::RequestTimeout
-    if timeout
-      raise OpenGraph::TimeoutError
-    end
+  def self.fetch(uri, timeout = nil, strict = true, proxy = nil)
+    # Disclaimer: Not thread-safe
+    original_proxy = RestClient.proxy
 
-    false
-  rescue RestClient::Exception, SocketError
-    false
+    begin
+      RestClient.proxy = proxy if proxy
+      response = RestClient::Request.execute(:method => :get, :url => uri, :timeout => timeout, :open_timeout => timeout)
+
+      parse(response.body, strict)
+    rescue RestClient::RequestTimeout
+      if timeout
+        raise OpenGraph::TimeoutError
+      end
+
+      false
+    rescue RestClient::Exception, SocketError
+      false
+    ensure
+      RestClient.proxy = original_proxy
+    end
   end
 
   def self.parse(html, strict = true)
